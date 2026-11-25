@@ -46,6 +46,14 @@ case "${1:-}" in
     cp -R "$APP" "$STAGE/"
     # The shortcut the user drags the app onto.
     ln -s /Applications "$STAGE/Applications"
-    hdiutil create -volname Agares -srcfolder "$STAGE" -ov -format UDZO "build/Agares-$VERSION.dmg"
+    # The mounted disk's own icon. Its "has custom icon" flag is lost unless set on the mounted
+    # volume, so the image is built writable and compressed afterwards.
+    cp "$APP/Contents/Resources/AppIcon.icns" "$STAGE/.VolumeIcon.icns"
+    hdiutil create -volname Agares -srcfolder "$STAGE" -ov -format UDRW build/rw.dmg
+    hdiutil attach build/rw.dmg -nobrowse -mountpoint build/mnt
+    SetFile -a C build/mnt
+    hdiutil detach build/mnt
+    hdiutil convert build/rw.dmg -format UDZO -ov -o "build/Agares-$VERSION.dmg"
+    rm build/rw.dmg
     ;;
 esac
