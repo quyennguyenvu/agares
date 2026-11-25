@@ -333,7 +333,7 @@ Downloaded copies still meet the Gatekeeper warning on first launch, as Goetia's
 
 ## 10. Risks
 
-1. **Autocomplete trick and Spotlight detection are unverified here.** They come from OpenKey's source and have not been tried on macOS 27 or current browsers. The hand checklist settles it per app.
+1. **Autocomplete trick and Spotlight detection: verified by hand on 2026-11-25.** They come from OpenKey's source and had not been tried on macOS 27 or current browsers. The hand checklist (plan Task 7) passed in every app it lists, Safari, Chrome and Spotlight included.
 2. **Self-signed signing: verified on 2026-11-24.** `codesign` accepts the certificate without any trust setting, and the Accessibility grant survived a build with a different code hash signed by it. Not yet tried: a downloaded release replacing an installed copy.
 3. **The Swift package tooling on this Mac needs a one-time repair.** Four leftover Swift 5.10 interface files inside the Command Line Tools make every package manifest fail to link; the plan's first task removes them. With them out of the way, Swift Testing works without Xcode, through `scripts/test.sh`, which passes the test macro plugin path explicitly (the first test build after a clean otherwise leaves it out).
 4. **Removing Agares from Accessibility while it runs can stall keyboard input** until it quits. Quit Agares first.
