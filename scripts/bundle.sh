@@ -19,8 +19,8 @@ cp "$(swift build "${FLAGS[@]}" --show-bin-path)/Agares" "$APP/Contents/MacOS/Ag
 cp Resources/Info.plist "$APP/Contents/Info.plist"
 
 for size in 16 32 128 256 512; do
-  rsvg-convert -w "$size" -h "$size" Resources/icon.svg -o "$ICONSET/icon_${size}x${size}.png"
-  rsvg-convert -w $((size * 2)) -h $((size * 2)) Resources/icon.svg -o "$ICONSET/icon_${size}x${size}@2x.png"
+  sips -s format png -z "$size" "$size" Resources/icon.svg --out "$ICONSET/icon_${size}x${size}.png" >/dev/null
+  sips -s format png -z $((size * 2)) $((size * 2)) Resources/icon.svg --out "$ICONSET/icon_${size}x${size}@2x.png" >/dev/null
 done
 iconutil -c icns "$ICONSET" -o "$APP/Contents/Resources/AppIcon.icns"
 

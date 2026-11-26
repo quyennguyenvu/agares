@@ -19,8 +19,6 @@ struct Letter: Equatable {
     /// A ư typed as a bare w. Undo turns it back into the w it was.
     var fromW = false
 
-    var isVowel: Bool { base.isVowel }
-
     /// The lowercase letter with its mark and no tone.
     var marked: Character {
         switch (base, mark) {

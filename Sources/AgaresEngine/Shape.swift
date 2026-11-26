@@ -4,7 +4,7 @@ struct Shape {
     let vowels: Range<Int>
     /// Judged on base letters only, ignoring marks.
     let isValid: Bool
-    /// Final c, ch, p or t: such a syllable takes only sắc or nặng.
+    /// Final c, ch, k, p or t: such a syllable takes only sắc or nặng.
     let endsInStop: Bool
     /// The vowel that carries the tone, nil when the word has no vowel.
     let toneIndex: Int?
@@ -29,7 +29,7 @@ struct Shape {
             && (initial.isEmpty || initials.contains(initial) || (allowsZFWJ && ["z", "f", "w", "j"].contains(initial)))
             && groups.contains(group)
             && (final.isEmpty || finals.contains(final))
-        endsInStop = ["c", "ch", "p", "t"].contains(final)
+        endsInStop = ["c", "ch", "k", "p", "t"].contains(final)
 
         if let marked = vowels.last(where: { letters[$0].mark != .none }) {
             toneIndex = marked
@@ -44,8 +44,9 @@ struct Shape {
     }
 }
 
+// kr, and k among the finals, are for highland place names: Krông, Đắk Lắk.
 private let initials: Set<String> = [
-    "b", "c", "ch", "d", "g", "gh", "gi", "h", "k", "kh", "l", "m", "n", "ng", "ngh", "nh",
+    "b", "c", "ch", "d", "g", "gh", "gi", "h", "k", "kh", "kr", "l", "m", "n", "ng", "ngh", "nh",
     "p", "ph", "qu", "r", "s", "t", "th", "tr", "v", "x",
 ]
 
@@ -56,7 +57,7 @@ private let groups: Set<String> = [
     "ieu", "oai", "oao", "oay", "oeo", "uay", "uoi", "uou", "uya", "uye", "uyu", "yeu",
 ]
 
-private let finals: Set<String> = ["c", "ch", "m", "n", "ng", "nh", "p", "t"]
+private let finals: Set<String> = ["c", "ch", "k", "m", "n", "ng", "nh", "p", "t"]
 
 /// Every vowel group Vietnamese writes with a circumflex. A doubling vowel adds one only if it makes one of these.
 let circumflexGroups: Set<String> = [

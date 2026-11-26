@@ -90,6 +90,7 @@ if $skip_checks; then
 else
   step "Checks"
   run bash scripts/test.sh
+  run python3 scripts/sync-plans.py
 fi
 
 # --- version bump ----------------------------------------------------------
@@ -100,7 +101,9 @@ else
   step "Bumping Info.plist to $version"
   run plutil -replace CFBundleShortVersionString -string "$version" "$PLIST"
   run plutil -replace CFBundleVersion -string "$version" "$PLIST"
-  run git add "$PLIST"
+  # The control-panel plan prints Info.plist, and the next release's check wants that copy equal.
+  run python3 scripts/sync-plans.py --apply "2026-11-25-control-panel.md::Resources/Info.plist#1"
+  run git add "$PLIST" docs/superpowers/plans
   run git commit -m "chore(release): $tag"
 fi
 

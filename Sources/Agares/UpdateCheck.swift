@@ -10,14 +10,13 @@ enum UpdateCheck {
         (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String).flatMap(Version.init)
     }
 
-    /// Calls back on the main thread with the latest release's version, if the response named one,
-    /// and with whether GitHub answered at all.
-    static func latest(_ done: @escaping (_ latest: Version?, _ answered: Bool) -> Void) {
+    /// Calls back on the main thread with the latest release's version, if the response named one.
+    static func latest(_ done: @escaping (Version?) -> Void) {
         let url = URL(string: "https://api.github.com/repos/\(repo)/releases/latest")!
-        URLSession.shared.dataTask(with: url) { data, response, _ in
+        URLSession.shared.dataTask(with: url) { data, _, _ in
             let json = data.flatMap { try? JSONSerialization.jsonObject(with: $0) } as? [String: Any]
             let latest = (json?["tag_name"] as? String).flatMap(Version.init)
-            DispatchQueue.main.async { done(latest, response != nil) }
+            DispatchQueue.main.async { done(latest) }
         }.resume()
     }
 

@@ -4,11 +4,8 @@
 A plan prints a file as a line "Write `path`:" followed by a fenced block. This lists every such
 block that differs from the repo, and with --apply rewrites the ones named.
 
-    python3 scripts/sync-plans.py                    list the differences
+    python3 scripts/sync-plans.py                    list the differences, exit 1 on an unexpected one
     python3 scripts/sync-plans.py --apply KEY ...    rewrite those blocks from the repo
-
-Five blocks in the v1 plan are meant to differ: Package.swift in Task 1 (an earlier stage) and
-KeyTap.swift, StatusMenu.swift, main.swift and Info.plist, kept as the v1 versions.
 """
 import difflib
 import glob
@@ -17,6 +14,18 @@ import sys
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 apply = set(sys.argv[2:]) if sys.argv[1:2] == ["--apply"] else None
+# Meant to differ: Package.swift in Task 1 is an earlier stage, the rest are kept as the v1 versions.
+EXPECTED = {
+    "2026-11-24-agares-v1.md::" + block
+    for block in (
+        "Package.swift#1",
+        "Sources/Agares/KeyTap.swift#1",
+        "Sources/Agares/StatusMenu.swift#1",
+        "Sources/Agares/main.swift#1",
+        "Resources/Info.plist#1",
+    )
+}
+drifted = False
 
 
 def blocks(lines):
@@ -46,10 +55,15 @@ for plan in sorted(glob.glob(os.path.join(REPO, "docs/superpowers/plans/*.md")))
         if lines[start:end] != current:
             changed = sum(1 for d in difflib.ndiff(lines[start:end], current) if d[:1] in "+-")
             rewrite = apply is not None and key in apply
-            print(f"{'REWRITTEN' if rewrite else 'DIFFERS  '} {key} ({changed} changed lines)")
+            label = "REWRITTEN" if rewrite else "EXPECTED " if key in EXPECTED else "DIFFERS  "
+            drifted |= label == "DIFFERS  "
+            print(f"{label} {key} ({changed} changed lines)")
             if rewrite:
                 edits.append((start, end, current))
     for start, end, current in reversed(edits):
         lines[start:end] = current
     if edits:
         open(plan, "w", encoding="utf-8").write("\n".join(lines))
+
+# Only the plain listing is a check; an --apply run reports what it rewrote.
+sys.exit(1 if drifted and apply is None else 0)

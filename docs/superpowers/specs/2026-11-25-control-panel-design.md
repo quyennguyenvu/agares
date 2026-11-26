@@ -122,7 +122,7 @@ A `GET` to `https://api.github.com/repos/quyennguyenvu/agares/releases/latest`. 
 
 The request is made in two situations.
 
-**The daily check.** Agares checks when it starts and then at most once every 24 hours, on the same two-second tick that watches the Accessibility permission. `nextUpdateCheck` holds the time of the next one: it is booked an hour ahead before the request goes out, and a day ahead once GitHub has answered, so an unanswered check is retried in an hour and never on every tick. The check is silent. A newer release switches on the dot in the menu bar, the Version … Available… menu item and the panel's Get … button; a release that is not newer switches them off; a check that named no version leaves them as they were.
+**The daily check.** Agares checks when it starts and then at most once every 24 hours, on the same two-second tick that watches the Accessibility permission. `nextUpdateCheck` holds the time of the next one: it is booked a day ahead before the request goes out, so a check that fails is not retried and the next one comes a day later. The check is silent. A newer release switches on the dot in the menu bar, the Version … Available… menu item and the panel's Get … button; a release that is not newer switches them off; a check that named no version leaves them as they were.
 
 **The Check for Updates command.** It always answers with an alert, and updates the same indicators.
 

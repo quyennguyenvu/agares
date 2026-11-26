@@ -148,9 +148,11 @@ Repeating a mark key that already took effect removes the mark and types the key
 
 A mark or tone applies only when the word, ignoring marks, has the shape *initial consonant (optional), vowel group, final consonant (optional)*, drawn from three fixed tables:
 
-- **Initials:** b c ch d đ g gh gi h k kh l m n ng ngh nh p ph qu r s t th tr v x
+- **Initials:** b c ch d đ g gh gi h k kh kr l m n ng ngh nh p ph qu r s t th tr v x
 - **Vowel groups (base letters):** a e i o u y, ai ao au ay eo eu ia ie iu oa oe oi oo ua ue ui uo uu uy ye, ieu oai oao oay oeo uay uoi uou uya uye uyu yeu
-- **Finals:** c ch m n ng nh p t
+- **Finals:** c ch k m n ng nh p t
+
+The initial kr and the final k are not in everyday Vietnamese. They are there for highland place names: Krông, Đắk Lắk.
 
 A mark is added only when the vowel group then reads as one of the groups Vietnamese writes with that kind of mark:
 
@@ -159,7 +161,7 @@ A mark is added only when the vowel group then reads as one of the groups Vietna
 
 With the option of 4.8 switched on, z, f, w and j are initials too.
 
-Syllables ending in c, ch, p or t accept only sắc and nặng.
+Syllables ending in c, ch, k, p or t accept only sắc and nặng.
 
 The check runs when a mark key is pressed. Nothing already typed is ever restored, so a word that becomes invalid later keeps its marks (see section 9).
 
@@ -261,7 +263,7 @@ The rule for future changes: nothing that runs inside the key hook may wait on t
 | --- | --- |
 | Accessibility not granted at launch | macOS is asked to show its prompt once. The menu bar shows the warning mark and the Open Accessibility Settings… item, and the panel opens with Grant Accessibility… and Reset Permission buttons (control-panel spec, section 5). Agares re-checks every 2 seconds and starts the tap when granted, with no relaunch. |
 | Grant withdrawn while running | The tap is stopped at the next 2-second check and the warning state returns. |
-| macOS disables the tap (timeout or user input) | Re-enabled immediately on the tap-disabled event. |
+| macOS disables the tap (timeout or user input) | Re-enabled immediately on the tap-disabled event. The word being tracked is dropped, because keys typed while the tap was off never reached the engine. |
 | Tap cannot be created | Back to the warning state above; the next 2-second check tries again. |
 | Password fields (secure input) | macOS withholds keys from taps. Agares does nothing and typing is unmodified. |
 | Any doubt inside the tap callback | The original event is returned. A typed key is swallowed only when a complete `Edit` is ready to send. The only other keys swallowed are the hotkey itself and, while a hotkey is being recorded, the captured shortcut or Esc. |
@@ -285,7 +287,7 @@ agares/
 
 - **Signing certificate:** created once, self-signed, named "Agares Dev", stored in the login keychain. The first signing shows a keychain prompt; choose Always Allow. Goetia needs no certificate because ad-hoc signing is enough for notifications; Agares needs one because the Accessibility grant is tied to the signer.
 - **Install:** `scripts/bundle.sh install` copies `build/Agares.app` to `/Applications` and relaunches it.
-- **Icon:** an ember ring in Goetia's palette (`#FF9E2C` to `#E8590C` on graphite `#1A1F28`) around the letter â. One SVG, converted with `rsvg-convert` and `iconutil`, both already installed.
+- **Icon:** an ember ring in Goetia's palette (`#FF9E2C` to `#E8590C` on graphite `#1A1F28`) around the letter â. One SVG, converted with `sips` and `iconutil`, both part of macOS.
 - **Other Macs:** out of scope for v1; releases were added on 2026-11-25 (7.1).
 
 ### 7.1 Releases (added 2026-11-25)

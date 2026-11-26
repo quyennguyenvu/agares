@@ -37,10 +37,6 @@ jobs:
       - name: Tests
         run: bash scripts/test.sh
 
-      # scripts/bundle.sh renders the icon from Resources/icon.svg
-      - name: Install librsvg
-        run: brew install librsvg
-
       # macOS ties the Accessibility permission to the signer, so every release
       # is signed with the one self-signed "Agares Dev" certificate.
       - name: Import the signing certificate

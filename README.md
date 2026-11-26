@@ -116,7 +116,7 @@ Tone and mark keys can come anywhere after the letter they belong to: `laays`, `
 
 ## Developing
 
-You need macOS 13 or newer, a Swift 6 toolchain (the Command Line Tools are enough, no Xcode), and `librsvg` for the icon (`brew install librsvg`).
+You need macOS 13 or newer and a Swift 6 toolchain (the Command Line Tools are enough, no Xcode).
 
 ```sh
 bash scripts/test.sh             # run the tests

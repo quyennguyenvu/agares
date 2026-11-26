@@ -16,6 +16,6 @@ import Testing
 }
 
 @Test func knowsVowels() {
-    #expect(Letter(base: "y").isVowel)
-    #expect(!Letter(base: "d", mark: .stroke).isVowel)
+    #expect(Character("y").isVowel)
+    #expect(!Character("d").isVowel)
 }

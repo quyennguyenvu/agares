@@ -153,6 +153,9 @@ private let words: [Word] = [
     Word("muong", [(2, "o"), (1, "s")], "muống"),
     Word("nghieng", [(4, "e")], "nghiêng"),
     Word("nghi", [(3, "x")], "nghĩ"),
+    // Highland place names: k as a final, kr as an initial
+    Word("dak", [(0, "d"), (1, "w"), (1, "s")], "đắk"),
+    Word("krong", [(2, "o")], "krông"),
     // A bare w typed as the letter ư
     Word("tw", [(1, "f")], "từ"),
     Word("nhw", [], "như"),

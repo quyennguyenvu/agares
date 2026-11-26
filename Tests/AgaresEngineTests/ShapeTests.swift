@@ -5,7 +5,7 @@ private func shape(_ word: String) -> Shape {
     Shape(word.map { Letter(base: $0) })
 }
 
-@Test(arguments: ["a", "tieng", "nguoi", "qua", "gi", "gin", "gia", "quyen", "khuyu", "nghieng", "xoong", "uong"])
+@Test(arguments: ["a", "tieng", "nguoi", "qua", "gi", "gin", "gia", "quyen", "khuyu", "nghieng", "xoong", "uong", "dak", "krong"])
 func acceptsVietnameseShapes(word: String) {
     #expect(shape(word).isValid)
 }
@@ -26,6 +26,7 @@ func rejectsOtherShapes(word: String) {
 @Test func onlyStopFinalsRestrictTheTone() {
     #expect(shape("cat").endsInStop)
     #expect(shape("cach").endsInStop)
+    #expect(shape("dak").endsInStop)
     #expect(!shape("can").endsInStop)
     #expect(!shape("ca").endsInStop)
 }

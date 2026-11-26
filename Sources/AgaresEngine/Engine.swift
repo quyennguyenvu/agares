@@ -87,7 +87,7 @@ public struct Engine {
         append(key)
     }
 
-    /// Spec 4.5: a valid shape, and a stop final (c, ch, p, t) only with sắc, nặng or no tone.
+    /// Spec 4.5: a valid shape, and a stop final (c, ch, k, p, t) only with sắc, nặng or no tone.
     private func accepts(_ tone: Tone?, _ shape: Shape) -> Bool {
         shape.isValid && (!shape.endsInStop || tone == nil || tone == .acute || tone == .dot)
     }

@@ -99,7 +99,7 @@ final class AppModel: ObservableObject {
 
     /// A check the user asked for: always answered with an alert.
     func checkForUpdates() {
-        UpdateCheck.latest { [weak self] latest, _ in
+        UpdateCheck.latest { [weak self] latest in
             self?.note(latest)
             UpdateCheck.report(latest: latest)
         }
@@ -114,12 +114,9 @@ final class AppModel: ObservableObject {
     private func checkForUpdatesIfDue() {
         let now = Date().timeIntervalSince1970
         guard now >= defaults.double(forKey: "nextUpdateCheck") else { return }
-        // Booked an hour ahead first, so a check that gets no answer is retried then, not on every tick.
-        defaults.set(now + 3600, forKey: "nextUpdateCheck")
-        UpdateCheck.latest { [weak self] latest, answered in
-            self?.note(latest)
-            if answered { self?.defaults.set(Date().timeIntervalSince1970 + 86_400, forKey: "nextUpdateCheck") }
-        }
+        // Booked a day ahead before the request goes out: a check that fails waits for the next day's.
+        defaults.set(now + 86_400, forKey: "nextUpdateCheck")
+        UpdateCheck.latest { [weak self] latest in self?.note(latest) }
     }
 
     /// A check that named no version leaves what is already known alone.

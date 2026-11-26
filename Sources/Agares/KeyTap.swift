@@ -91,6 +91,8 @@ final class KeyTap {
         switch type {
         case .tapDisabledByTimeout, .tapDisabledByUserInput:
             if let tap { CGEvent.tapEnable(tap: tap, enable: true) }
+            // Keys typed while the tap was off never reached the engine, so its word is stale.
+            engine.reset()
             return pass
         case .flagsChanged:
             if isFromAnotherApp(event) { return pass }
