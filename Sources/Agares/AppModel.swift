@@ -53,6 +53,9 @@ final class AppModel: ObservableObject {
         didSet { stateChanged() }
     }
 
+    /// What the diagnostics page shows while it is open; nil while the settings show.
+    @Published private(set) var diagnostics: Diagnostics.Page?
+
     /// Flipped once when the panel appears, to start the seal's breathing animation.
     @Published var breathing = false
     @Published var tryText = ""
@@ -68,6 +71,8 @@ final class AppModel: ObservableObject {
     private let saveQueue = DispatchQueue(label: "com.quyennguyenvu.agares.save", qos: .utility)
     private let soundQueue = DispatchQueue(label: "com.quyennguyenvu.agares.sound", qos: .userInitiated)
     private var pendingSound: DispatchWorkItem?
+    /// Accessibility is granted but macOS will not start the hook. Kept so it is noted once, not every tick.
+    private var tapRefused = false
 
     init() {
         let defaults = UserDefaults.standard
@@ -83,6 +88,11 @@ final class AppModel: ObservableObject {
         keyTap.ignoresOtherApps = ignoresOtherApps
         keyTap.hotkey = hotkey
         keyTap.onHotkey = { [weak self] in self?.toggle() }
+        Diagnostics.onNote = { [weak self] in
+            guard self?.diagnostics != nil else { return }
+            // Later, not now: the line may have been written inside the key hook, which must not wait.
+            DispatchQueue.main.async { self?.refreshDiagnostics() }
+        }
     }
 
     /// Asks for Accessibility once, then starts the key hook as soon as it is granted.
@@ -94,7 +104,42 @@ final class AppModel: ObservableObject {
 
     private func tick() {
         checkPermission()
+        keyTap.revive()
+        Diagnostics.tick()
+        refreshDiagnostics()
         checkForUpdatesIfDue()
+    }
+
+    func showDiagnostics() {
+        diagnostics = Diagnostics.page(tap: tapState)
+    }
+
+    func hideDiagnostics() {
+        diagnostics = nil
+    }
+
+    /// Keeps an open page current. Called when a line is written and on every tick.
+    private func refreshDiagnostics() {
+        guard diagnostics != nil else { return }
+        let page = Diagnostics.page(tap: tapState)
+        if page != diagnostics { diagnostics = page }
+    }
+
+    private var tapState: String {
+        !trusted ? "not started" : keyTap.isEnabled ? "enabled" : "DISABLED"
+    }
+
+    /// Puts the diagnostics report on the clipboard.
+    func copyDiagnostics() {
+        func word(_ on: Bool) -> String { on ? "on" : "off" }
+        let settings = [
+            "Vietnamese \(word(vietnameseOn))", "hotkey \(hotkey.name)", "z, w, j, f \(word(allowsZFWJ))",
+            "leave other apps' keys \(word(ignoresOtherApps))", "sound \(word(soundOn))",
+            "launch at login \(word(launchAtLogin))",
+        ].joined(separator: " · ")
+        let report = Diagnostics.report(settings: settings, accessibility: AXIsProcessTrusted(), tap: tapState)
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(report, forType: .string)
     }
 
     /// A check the user asked for: always answered with an alert.
@@ -162,6 +207,8 @@ final class AppModel: ObservableObject {
                 try SMAppService.mainApp.unregister()
             }
         } catch {
+            let cause = error as NSError
+            Diagnostics.note("[login] launch at login failed: \(DiagnosticLog.clean(cause.domain)) \(cause.code)")
             NSAlert(error: error).runModal()
         }
         launchAtLogin = SMAppService.mainApp.status == .enabled
@@ -186,6 +233,7 @@ final class AppModel: ObservableObject {
             cleared = false
         }
         if !cleared {
+            Diagnostics.note("[perm] reset failed")
             let alert = NSAlert()
             alert.messageText = "Couldn't reset the permission"
             alert.informativeText = "In System Settings → Privacy & Security → Accessibility, select Agares, remove it with the − button, then grant it again."
@@ -204,11 +252,19 @@ final class AppModel: ObservableObject {
     /// Starts the hook once Accessibility is granted, and stops it if the grant is withdrawn.
     private func checkPermission() {
         let granted = AXIsProcessTrusted()
+        if !granted { tapRefused = false }
         if granted, !trusted {
             trusted = keyTap.start()
+            if trusted {
+                Diagnostics.note("[perm] accessibility granted")
+            } else if !tapRefused {
+                Diagnostics.note("[perm] granted, but macOS refused the tap")
+            }
+            tapRefused = !trusted
         } else if !granted, trusted {
             keyTap.stop()
             trusted = false
+            Diagnostics.note("[perm] accessibility withdrawn")
         }
     }
 

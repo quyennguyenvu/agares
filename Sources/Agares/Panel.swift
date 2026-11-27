@@ -36,6 +36,8 @@ final class Panel: NSObject, NSWindowDelegate {
 
     func windowWillClose(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
+        // The panel opens on its settings next time, and an unseen page stops being refreshed.
+        model.hideDiagnostics()
     }
 
     // A recording left running would capture the next shortcut pressed in another app.
@@ -66,6 +68,25 @@ private struct PanelView: View {
     @ObservedObject var model: AppModel
 
     var body: some View {
+        // The settings stay in place under the diagnostics page and keep setting the window's size,
+        // so the window does not jump when the page opens or closes.
+        settings
+            .opacity(model.diagnostics == nil ? 1 : 0)
+            .disabled(model.diagnostics != nil)
+            .accessibilityHidden(model.diagnostics != nil)
+            .overlay {
+                if let page = model.diagnostics {
+                    DiagnosticsPage(page: page, back: model.hideDiagnostics, copy: model.copyDiagnostics)
+                }
+            }
+            .padding(EdgeInsets(top: 40, leading: 28, bottom: 24, trailing: 28))
+            .frame(width: 420)
+            .background(Palette.bg0)
+            .foregroundColor(Palette.text1)
+            .tint(Palette.accent)
+    }
+
+    private var settings: some View {
         VStack(spacing: 22) {
             Seal(model: model)
             tryField
@@ -82,11 +103,12 @@ private struct PanelView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             footer
         }
-        .padding(EdgeInsets(top: 40, leading: 28, bottom: 24, trailing: 28))
-        .frame(width: 420)
-        .background(Palette.bg0)
-        .foregroundColor(Palette.text1)
-        .tint(Palette.accent)
+        // In the corner beside the seal: the footer's rows are full while Accessibility is missing.
+        .overlay(alignment: .topTrailing) {
+            Button("Diagnostics ›", action: model.showDiagnostics)
+                .buttonStyle(.link)
+                .font(.system(size: 12))
+        }
     }
 
     private var tryField: some View {
@@ -175,6 +197,76 @@ private struct PanelView: View {
             }
         }
         .font(.system(size: 12))
+    }
+}
+
+/// What Agares noticed going wrong, and what is true right now. Laid over the settings.
+private struct DiagnosticsPage: View {
+    let page: Diagnostics.Page
+    let back: () -> Void
+    let copy: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(spacing: 12) {
+                Button("‹ Back", action: back)
+                Text("DIAGNOSTICS")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundColor(Palette.text2)
+                Spacer()
+                Button("Copy", action: copy)
+                    .help("Copies these lines, with the settings and the state above, as text.")
+            }
+            VStack(alignment: .leading, spacing: 7) {
+                // Amber marks what would explain typing that does not convert.
+                fact("Key hook", page.tap, fine: page.tap == "enabled")
+                fact("Secure Input", page.secureInput, fine: page.secureInput == "off")
+                fact("Input source", page.inputSource, fine: ["com.apple.keylayout.ABC", "com.apple.keylayout.US"].contains(page.inputSource))
+                fact("Other typing tools", page.otherTools, fine: page.otherTools == "none")
+                fact("Last app", page.lastApp, fine: nil)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(12)
+            .background(Palette.bg1)
+            .cornerRadius(10)
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 7) {
+                    ForEach(page.lines.indices, id: \.self) { index in
+                        line(page.lines[index])
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+        .font(.system(size: 12))
+    }
+
+    /// Wide enough for the day as well only when a line from an earlier day is on show.
+    private var stampWidth: CGFloat {
+        page.lines.allSatisfy { $0.hasPrefix(page.today) } ? 60 : 82
+    }
+
+    private func fact(_ name: String, _ value: String, fine: Bool?) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+            Circle()
+                .fill(fine.map { $0 ? Palette.ok : Palette.warn } ?? Color.clear)
+                .frame(width: 7, height: 7)
+            Text(name).foregroundColor(Palette.text2)
+            Text(value).textSelection(.enabled)
+        }
+    }
+
+    private func line(_ stored: String) -> some View {
+        let parts = DiagnosticLog.parts(of: stored)
+        return HStack(alignment: .firstTextBaseline, spacing: 10) {
+            Text(parts?.stamp(today: page.today) ?? "")
+                .foregroundColor(Palette.text2)
+                .frame(width: stampWidth, alignment: .leading)
+            (Text(parts.map { "[\($0.tag)] " } ?? "").foregroundColor(Palette.text2) + Text(parts?.text ?? stored))
+                .textSelection(.enabled)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .font(.system(size: 11, design: .monospaced))
     }
 }
 

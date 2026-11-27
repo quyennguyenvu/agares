@@ -52,6 +52,8 @@ final class Typist {
     /// about a millisecond, far too much for every keystroke, so the answer is reused.
     private var spotlightOpen: Bool?
     private var spotlightCheckedAt = 0.0
+    /// The answer last written to Diagnostics, which outlives `forgetSpotlight`.
+    private var notedSpotlight = false
 
     /// Call when Spotlight may have opened or closed: a shortcut, an unusual key, a click, an app switch.
     func forgetSpotlight() {
@@ -65,12 +67,24 @@ final class Typist {
         let open = lookForSpotlight()
         spotlightOpen = open
         spotlightCheckedAt = now
+        if open != notedSpotlight {
+            notedSpotlight = open
+            Diagnostics.note(open ? "[typist] spotlight mode on" : "[typist] spotlight mode off")
+        }
         return open
     }
 
     private func lookForSpotlight() -> Bool {
         if NSWorkspace.shared.frontmostApplication?.bundleIdentifier == "com.apple.Spotlight" { return true }
         let windows = CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID)
-        return (windows as? [[String: Any]] ?? []).contains { $0[kCGWindowOwnerName as String] as? String == "Spotlight" }
+        return (windows as? [[String: Any]] ?? []).contains { window in
+            switch window[kCGWindowOwnerName as String] as? String {
+            case "Spotlight": return true
+            // On macOS 27 the Siri AI app shows the search bar, as a panel above ordinary windows
+            // that never becomes the front app. That app's ordinary windows are not the search bar.
+            case "Siri": return (window[kCGWindowLayer as String] as? Int ?? 0) > 0
+            default: return false
+            }
+        }
     }
 }

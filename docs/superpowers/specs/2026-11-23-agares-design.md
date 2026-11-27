@@ -13,6 +13,7 @@ This spec describes v1 as designed on 2026-11-23. Later decisions changed parts 
 | Dock and quitting | A Dock icon while the panel is open; only the menu bar item quits | same, section 6 |
 | Network | One request for the latest release, made at most once a day and on demand | same, section 7 |
 | Distribution | Releases for other Macs, signed with the same certificate as local builds | section 7.1 of this document |
+| Spotlight | On macOS 27 the search bar is a panel of the Siri AI app, and the check accepts it too | section 5 of this document, 2026-11-27 |
 
 ## 1. Summary
 
@@ -88,6 +89,7 @@ An `NSStatusItem` showing `V` or `E`, or a warning mark when permission is missi
 - Vietnamese (checkmark)
 - Open Agares…
 - Check for Updates…
+- Diagnostics…, which opens the panel on its diagnostics page (see the diagnostics design)
 - Quit Agares
 
 Launch at login, backed by `SMAppService.mainApp`, lives in the panel. The hotkey is ⌃⇧Space by default and configurable. The settings and state that the menu and the panel share are held by `AppModel` and saved in `UserDefaults`. The control-panel spec has the details; v1 had a fixed Ctrl+Shift hotkey and kept Launch at login in this menu.
@@ -232,7 +234,7 @@ Given `Edit(backspaces: n, text: s)`, Typist sends one of three sequences.
 | Spotlight is open, n > 0 | Press Shift+Left n times, type s | The invisible-character trick misbehaves in Spotlight. Selecting the old characters and typing over them works there. |
 | n = 0 | Type s | Nothing to delete. |
 
-Spotlight counts as open when the front app's bundle id is `com.apple.Spotlight` or a window owned by Spotlight is on screen. The check is needed only when an `Edit` with n > 0 is about to be sent, and its answer is cached (5.1).
+Spotlight counts as open when the front app's bundle id is `com.apple.Spotlight` or a window owned by Spotlight is on screen. On macOS 27 neither ever holds: the Siri AI app shows the search bar and no process called Spotlight runs. There it counts as open when a window owned by "Siri" is on screen above the level of ordinary windows; with the bar open the front app does not change (measured on 2026-11-27: `Siri@23 640x467`). The check is needed only when an `Edit` with n > 0 is about to be sent, and its answer is cached (5.1).
 
 Text is sent as precomposed Unicode (NFC) through the key event's Unicode string.
 
@@ -335,7 +337,7 @@ Downloaded copies still meet the Gatekeeper warning on first launch, as Goetia's
 
 ## 10. Risks
 
-1. **Autocomplete trick and Spotlight detection: verified by hand on 2026-11-25.** They come from OpenKey's source and had not been tried on macOS 27 or current browsers. The hand checklist (plan Task 7) passed in every app it lists, Safari, Chrome and Spotlight included.
+1. **Autocomplete trick and Spotlight detection: verified by hand on 2026-11-25.** They come from OpenKey's source and had not been tried on macOS 27 or current browsers. The hand checklist (plan Task 7) passed in every app it lists, Safari, Chrome and Spotlight included. On 2026-11-27, on the same macOS 27.2.1, Spotlight was found failing because the detection never matched (section 5); why it passed two days earlier is not known.
 2. **Self-signed signing: verified on 2026-11-24.** `codesign` accepts the certificate without any trust setting, and the Accessibility grant survived a build with a different code hash signed by it. Not yet tried: a downloaded release replacing an installed copy.
 3. **The Swift package tooling on this Mac needs a one-time repair.** Four leftover Swift 5.10 interface files inside the Command Line Tools make every package manifest fail to link; the plan's first task removes them. With them out of the way, Swift Testing works without Xcode, through `scripts/test.sh`, which passes the test macro plugin path explicitly (the first test build after a clean otherwise leaves it out).
 4. **Removing Agares from Accessibility while it runs can stall keyboard input** until it quits. Quit Agares first.

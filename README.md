@@ -24,7 +24,7 @@ Vietnamese Telex typing for macOS, in any app, with **no underlined composing te
 
 **You always know which mode you are in.** `V` or `E` in the menu bar, an optional tick or pop sound on every switch, and a seal in the panel that glows while Vietnamese is on.
 
-**Small and local.** About 1,300 lines of Swift with no third-party code. The only network request Agares ever makes asks GitHub for the latest release number, at most once a day and when you choose Check for Updates. Nothing about you or your typing is sent.
+**Small and local.** About 1,900 lines of Swift with no third-party code. The only network request Agares ever makes asks GitHub for the latest release number, at most once a day and when you choose Check for Updates. Nothing about you or your typing is sent.
 
 In the Ars Goetia, Agares is the duke who "teaches all languages or tongues".
 
@@ -62,7 +62,7 @@ Agares tells you when a newer version exists. Once a day it asks GitHub for the 
   <img src="docs/media/panel-update.png" alt="The Agares panel when a newer version is available" width="320">
 </p>
 
-Replace the app in Applications with the newer version. Every release is signed with the same certificate, so the Accessibility permission carries over. If the menu bar shows `⚠` after an update anyway, open the panel, press **Reset Permission**, and switch Agares on in the Settings page that opens.
+Replace the app in Applications with the newer version. Every release is signed with the same certificate, so the Accessibility permission carries over. If the menu bar shows a small yellow warning sign on the `V` or `E` after an update anyway, open the panel, press **Reset Permission**, and switch Agares on in the Settings page that opens.
 
 ### Checking the download is genuine (optional)
 
@@ -110,9 +110,19 @@ Tone and mark keys can come anywhere after the letter they belong to: `laays`, `
 
 ### If something looks off
 
-- **`⚠` in the menu bar:** Agares does not have the Accessibility permission. Open the panel and press **Grant Accessibility…**. If Agares is already switched on there, macOS is holding a permission from an older build: press **Reset Permission** instead, then switch it on again.
+- **A small yellow warning sign on the letter in the menu bar:** Agares does not have the Accessibility permission. Open the panel and press **Grant Accessibility…**. If Agares is already switched on there, macOS is holding a permission from an older build: press **Reset Permission** instead, then switch it on again.
 - **Nothing happens after an update:** see [Updating](#updating).
 - **Letters doubled or garbled:** another Vietnamese typing tool is running at the same time.
+
+### Reporting a problem
+
+Click the menu bar item and choose **Diagnostics…**. The panel shows what Agares noticed going wrong and what is true right now. To send it to someone, press **Copy** and paste the text into an [issue](https://github.com/quyennguyenvu/agares/issues). It holds three things:
+
+- **What went wrong since Agares started:** the key hook switched off by macOS, the permission withdrawn, an update check that failed, and the like.
+- **Your settings:** the hotkey and the checkboxes.
+- **What is true right now:** the keyboard input source, whether macOS Secure Input is on, other typing tools that are running, and the last app you were in.
+
+It never holds a key, a letter or a word you typed. It does name apps: the last one in front, one holding Secure Input, other typing tools, and any app whose own typing Agares left alone. Nothing is sent anywhere. The report leaves your Mac only when you paste it.
 
 ## Developing
 
@@ -123,6 +133,12 @@ bash scripts/test.sh             # run the tests
 bash scripts/make-cert.sh        # once: create the local "Agares Dev" signing certificate
 bash scripts/bundle.sh install   # build, sign, copy to /Applications and launch
 python3 scripts/sync-plans.py    # list source printed in the plans that no longer matches the repo
+```
+
+Every diagnostics line also goes to the macOS unified log, so the history outlives a crash or a restart of the app:
+
+```sh
+/usr/bin/log show --predicate 'subsystem == "com.quyennguyenvu.agares"' --last 1d --style compact
 ```
 
 Builds are signed with the self-signed "Agares Dev" certificate so the Accessibility permission survives every rebuild. Releases use that same certificate; a certificate you create yourself is a different signer, so your builds and the released ones do not share a permission.

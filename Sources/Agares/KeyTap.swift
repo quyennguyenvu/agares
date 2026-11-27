@@ -30,6 +30,8 @@ final class KeyTap {
     private var onRecorded: (Hotkey?) -> Void = { _ in }
     private let typist = Typist()
     private var tap: CFMachPort?
+    /// The other apps whose keys have been reported to Diagnostics, so each lookup is made once.
+    private var notedSenders: Set<Int64> = []
 
     init() {
         NSWorkspace.shared.notificationCenter.addObserver(
@@ -66,6 +68,19 @@ final class KeyTap {
         engine.reset()
     }
 
+    /// False while macOS has the hook switched off, and while it is not running.
+    var isEnabled: Bool {
+        tap.map { CGEvent.tapIsEnabled(tap: $0) } ?? false
+    }
+
+    /// Switches the hook back on if macOS switched it off without sending the event that says so.
+    func revive() {
+        guard let tap, !CGEvent.tapIsEnabled(tap: tap) else { return }
+        CGEvent.tapEnable(tap: tap, enable: true)
+        engine.reset()
+        Diagnostics.note("[tap] found disabled, re-enabled")
+    }
+
     /// Hands the next shortcut the user presses to `done`, or nil if they cancel.
     func record(_ done: @escaping (Hotkey?) -> Void) {
         recorder = HotkeyRecorder()
@@ -88,8 +103,16 @@ final class KeyTap {
 
     private func handle(_ proxy: CGEventTapProxy, _ type: CGEventType, _ event: CGEvent) -> Unmanaged<CGEvent>? {
         let pass = Unmanaged.passUnretained(event)
+        // What this run did that could have waited, for the line written if it was slow.
+        var did = "pass"
+        let began = DispatchTime.now().uptimeNanoseconds
+        defer {
+            let ms = (DispatchTime.now().uptimeNanoseconds - began) / 1_000_000
+            if ms > 50 { Diagnostics.note("[tap] slow callback: \(ms) ms (\(did))") }
+        }
         switch type {
         case .tapDisabledByTimeout, .tapDisabledByUserInput:
+            Diagnostics.note(type == .tapDisabledByTimeout ? "[tap] disabled by timeout" : "[tap] disabled by user input")
             if let tap { CGEvent.tapEnable(tap: tap, enable: true) }
             // Keys typed while the tap was off never reached the engine, so its word is stale.
             engine.reset()
@@ -98,8 +121,10 @@ final class KeyTap {
             if isFromAnotherApp(event) { return pass }
             let held = Self.modifiers(event.flags)
             if recorder != nil {
+                did = "record"
                 finishRecording(recorder!.modifiersChanged(held))
             } else if matcher.modifiersChanged(held) {
+                did = "hotkey"
                 onHotkey()
             }
             return pass
@@ -125,11 +150,13 @@ final class KeyTap {
         let keyCode = UInt16(truncatingIfNeeded: event.getIntegerValueField(.keyboardEventKeycode))
 
         if recorder != nil {
+            did = "record"
             let outcome = recorder!.keyPressed(keyCode, held: held)
             finishRecording(outcome)
             return outcome == .pending ? pass : nil
         }
         if matcher.keyPressed(keyCode, held: held) {
+            did = "hotkey"
             // Holding the hotkey repeats the key; only the first press toggles.
             if event.getIntegerValueField(.keyboardEventAutorepeat) == 0 { onHotkey() }
             return nil
@@ -153,13 +180,17 @@ final class KeyTap {
             return pass
         }
         guard let edit else { return pass }
+        did = "edit"
         typist.send(edit, through: proxy)
         return nil
     }
 
     /// A key pressed on the keyboard has no sending process; one typed by an app carries that app's id.
     private func isFromAnotherApp(_ event: CGEvent) -> Bool {
-        ignoresOtherApps && event.getIntegerValueField(.eventSourceUnixProcessID) != 0
+        let sender = event.getIntegerValueField(.eventSourceUnixProcessID)
+        guard ignoresOtherApps, sender != 0 else { return false }
+        if notedSenders.insert(sender).inserted { Diagnostics.notePassing(pid_t(truncatingIfNeeded: sender)) }
+        return true
     }
 
     private static func modifiers(_ flags: CGEventFlags) -> Modifiers {

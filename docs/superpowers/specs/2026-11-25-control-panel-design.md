@@ -107,7 +107,7 @@ The seal is labelled for VoiceOver with its on or off value, and each preset chi
 
 ## 6. Menu bar, Dock and quitting
 
-The menu bar item shows `V`, `E` or `⚠`, followed by a dot when a newer release is known. Its width is fixed (one size without the dot, one with), because `V` is a point wider than `E` and a width that follows the letter nudges the item and its neighbours on every switch. Its menu: Open Accessibility Settings… (only while missing), Version 0.2.0 Available…, naming the newer release (only when one is known), Vietnamese (checkmark), Open Agares…, Check for Updates…, Quit Agares.
+The menu bar item shows `V` or `E`. While Accessibility is missing a small yellow warning sign is laid over the lower right of the letter, adding no width and leaving the letter where it is (changed on 2026-11-27: until then a plain `⚠` replaced the letter, and was hard to see). A dot follows the letter when a newer release is known. Its width is fixed (one size without the dot, one with), because `V` is a point wider than `E` and a width that follows the letter nudges the item and its neighbours on every switch. Its menu: Open Accessibility Settings… (only while missing), Version 0.2.0 Available…, naming the newer release (only when one is known), Vietnamese (checkmark), Open Agares…, Check for Updates…, Quit Agares.
 
 - The app lives in the menu bar (`LSUIElement`). It has a Dock icon only while the panel is open: showing the panel switches the app to a regular app, and closing the panel switches it back.
 - The panel opens from the menu bar item, and also when Agares is opened again from Launchpad, Spotlight or Finder while it is running.

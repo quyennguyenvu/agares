@@ -14,16 +14,28 @@ import sys
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 apply = set(sys.argv[2:]) if sys.argv[1:2] == ["--apply"] else None
-# Meant to differ: Package.swift in Task 1 is an earlier stage, the rest are kept as the v1 versions.
+# Meant to differ: Package.swift in the v1 plan's Task 1 is an earlier stage, and the rest are files
+# a later plan replaced, kept as the plan that printed them built them.
 EXPECTED = {
-    "2026-11-24-agares-v1.md::" + block
-    for block in (
-        "Package.swift#1",
-        "Sources/Agares/KeyTap.swift#1",
-        "Sources/Agares/StatusMenu.swift#1",
-        "Sources/Agares/main.swift#1",
-        "Resources/Info.plist#1",
+    f"{plan}::{path}#1"
+    for plan, kept in (
+        ("2026-11-24-agares-v1.md", (
+            "Package.swift",
+            "Sources/Agares/KeyTap.swift",
+            "Sources/Agares/StatusMenu.swift",
+            "Sources/Agares/Typist.swift",
+            "Sources/Agares/main.swift",
+            "Resources/Info.plist",
+        )),
+        ("2026-11-25-control-panel.md", (
+            "Sources/Agares/AppModel.swift",
+            "Sources/Agares/KeyTap.swift",
+            "Sources/Agares/Panel.swift",
+            "Sources/Agares/StatusMenu.swift",
+            "Sources/Agares/UpdateCheck.swift",
+        )),
     )
+    for path in kept
 }
 drifted = False
 

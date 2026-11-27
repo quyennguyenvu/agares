@@ -1,6 +1,11 @@
 import AppKit
 import CoreServices
 
+/// The warning badge. Clicks pass through it to the menu bar button underneath.
+private final class Badge: NSImageView {
+    override func hitTest(_ point: NSPoint) -> NSView? { nil }
+}
+
 /// The menu bar item, the Dock behaviour, and the rule that only the menu bar item can quit the app.
 final class StatusMenu: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let model = AppModel()
@@ -16,13 +21,14 @@ final class StatusMenu: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
         // Called by the model at the moment the state changes, so the letter switches without waiting for anything.
         model.stateChanged = { [weak self] in self?.refreshTitle() }
+        Diagnostics.start()
         model.start()
         refreshTitle()
         if !model.trusted { panel.show() }
     }
 
     private func refreshTitle() {
-        let state = !model.trusted ? "⚠" : model.vietnameseOn ? "V" : "E"
+        let state = model.vietnameseOn ? "V" : "E"
         // The dot says a newer release is waiting.
         let title = model.availableVersion == nil ? state : state + " •"
         // A fixed width: V is a point wider than E, and a width that follows the letter nudges the
@@ -31,7 +37,31 @@ final class StatusMenu: NSObject, NSApplicationDelegate, NSMenuDelegate {
         // This runs on every model change, so nothing is set that has not changed.
         if statusItem.length != length { statusItem.length = length }
         if statusItem.button?.title != title { statusItem.button?.title = title }
+        if warningBadge.isHidden != model.trusted { warningBadge.isHidden = model.trusted }
     }
+
+    /// A small yellow sign at the lower right of the letter while Accessibility is missing. It is a
+    /// view of its own laid over the button, so it takes no room and the letter stays where it is:
+    /// set as the button's image, it moved the letter.
+    private lazy var warningBadge: NSView = {
+        let size = NSImage.SymbolConfiguration(pointSize: 8, weight: .black)
+        // Its own colours: left as a template it would take the menu bar's text colour.
+        let colors = NSImage.SymbolConfiguration(paletteColors: [.black, .systemYellow])
+        let badge = Badge()
+        badge.image = NSImage(systemSymbolName: "exclamationmark.triangle.fill", accessibilityDescription: "Accessibility permission missing")?
+            .withSymbolConfiguration(size.applying(colors))
+        badge.translatesAutoresizingMaskIntoConstraints = false
+        if let button = statusItem.button {
+            button.addSubview(badge)
+            // From the middle of the letter, which sits half a bar's height from the leading edge
+            // whatever the item's width: as far down as to the right, on the diagonal.
+            NSLayoutConstraint.activate([
+                badge.centerXAnchor.constraint(equalTo: button.leadingAnchor, constant: NSStatusBar.system.thickness / 2 + 5.5),
+                badge.centerYAnchor.constraint(equalTo: button.centerYAnchor, constant: 5.5),
+            ])
+        }
+        return badge
+    }()
 
     func menuNeedsUpdate(_ menu: NSMenu) {
         menu.removeAllItems()
@@ -47,6 +77,7 @@ final class StatusMenu: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.addItem(.separator())
         add("Open Agares…", #selector(openPanel), to: menu)
         add("Check for Updates…", #selector(checkForUpdates), to: menu)
+        add("Diagnostics…", #selector(openDiagnostics), to: menu)
         menu.addItem(.separator())
         add("Quit Agares", #selector(quit), to: menu)
     }
@@ -68,6 +99,11 @@ final class StatusMenu: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     @objc private func checkForUpdates() {
         model.checkForUpdates()
+    }
+
+    @objc private func openDiagnostics() {
+        model.showDiagnostics()
+        panel.show()
     }
 
     @objc private func openReleasePage() {
