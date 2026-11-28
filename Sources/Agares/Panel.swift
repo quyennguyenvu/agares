@@ -40,6 +40,10 @@ final class Panel: NSObject, NSWindowDelegate {
         model.hideDiagnostics()
     }
 
+    func windowDidBecomeKey(_ notification: Notification) {
+        model.refreshLaunchAtLogin()
+    }
+
     // A recording left running would capture the next shortcut pressed in another app.
     func windowDidResignKey(_ notification: Notification) {
         model.cancelRecording()
@@ -96,6 +100,8 @@ private struct PanelView: View {
                     .help("Words such as zô and jì can then take marks. So can English words that start with these letters.")
                 Toggle("Leave text typed by other apps alone", isOn: $model.ignoresOtherApps)
                     .help("A password manager's auto-type or a text expander sends keys of its own. Agares then passes them through unconverted. Turn this off if you type with an on-screen keyboard.")
+                Toggle("Remember Vietnamese or English for each app", isOn: $model.remembersPerApp)
+                    .help("When you come back to an app, Agares switches to the mode you last used there. These switches play no sound.")
                 Toggle("Play a sound when toggling", isOn: $model.soundOn)
                 Toggle("Launch at login", isOn: Binding(get: { model.launchAtLogin }, set: { model.setLaunchAtLogin($0) }))
             }

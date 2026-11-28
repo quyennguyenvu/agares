@@ -59,11 +59,11 @@ Record puts the key hook in recording mode. The next valid combination becomes t
 
 ### 3.5 Storage
 
-`UserDefaults`: `hotkeyModifiers` (bit set) and `hotkeyKeyCode` (−1 for none). An invalid stored value falls back to the default. The other keys are `vietnameseOn`, `soundOn`, `allowsZFWJ`, `ignoresOtherApps` and `nextUpdateCheck` (section 7). Settings are written on a background queue, never on the thread the key hook runs on.
+`UserDefaults`: `hotkeyModifiers` (bit set) and `hotkeyKeyCode` (−1 for none). An invalid stored value falls back to the default. The other keys are `vietnameseOn`, `soundOn`, `allowsZFWJ`, `ignoresOtherApps`, `nextUpdateCheck` (section 7), and `remembersPerApp` and `appModes` (per-app spec, section 5). Settings are written on a background queue, never on the thread the key hook runs on.
 
 ## 4. Sound
 
-`soundOn` (default on) plays the system sound Tink when Vietnamese turns on and Pop when it turns off, however the toggle was made.
+`soundOn` (default on) plays the system sound Tink when Vietnamese turns on and Pop when it turns off, however the toggle was made. A mode brought back on an app switch is not a toggle and plays no sound (per-app spec, section 3).
 
 The sound is started on a background queue, never on the main thread. Starting a sound waits for the audio output to be ready, and with the output asleep that wait was measured at 3,959 ms on Bluetooth headphones (2026-11-25). The toggle runs inside the key hook, so that wait froze the menu bar letter and made macOS switch the hook off for not responding, which is why the hotkey sometimes had to be pressed several times. A sound still queued behind a slow start is dropped when the next toggle comes, so the wait cannot end in a burst of sounds.
 
@@ -89,6 +89,8 @@ One fixed-size window, about 420 points wide, dark graphite with ember accents (
 │                                          │
 │  ☐ Allow z, w, j, f as consonants        │
 │  ☑ Leave text typed by other apps alone  │
+│  ☐ Remember Vietnamese or English for    │
+│    each app                              │
 │  ☑ Play a sound when toggling            │
 │  ☑ Launch at login                       │
 │                                          │
@@ -100,7 +102,7 @@ One fixed-size window, about 420 points wide, dark graphite with ember accents (
 - **Seal:** a button. While Vietnamese is on the ring is ember, glows, and the glow slowly breathes; the letter is `â`. While off the ring is grey and the letter is `a`. It springs slightly on every toggle, including one made by hotkey from another app. The whole circle takes clicks, not only the drawn ring and letter. It is left out of the keyboard focus order: as the first control it took the focus ring, a square around the round seal, whenever the panel opened with keyboard navigation switched on.
 - **Try-it field:** an ordinary text field. Typing there goes through the real key hook.
 - **Hotkey:** the presets as keycap chips with the current one outlined in ember. A custom hotkey appears as an extra chip in front. Under the chips the current hotkey is spelled out in words ("Press Control + Option + Z to switch."), and each chip has the words as its tooltip. Symbols alone were not enough: ⌃ is the Control key, but at chip size it reads as an arrow, and a user pressing Shift + Option + Z for the second preset got `¸` and no switch.
-- **Checkboxes:** allow z, w, j, f as consonants (off by default; v1 spec, 4.8), leave text typed by other apps alone (on by default; v1 spec, 3.2), sound, and launch at login (moved here from the menu).
+- **Checkboxes:** allow z, w, j, f as consonants (off by default; v1 spec, 4.8), leave text typed by other apps alone (on by default; v1 spec, 3.2), remember Vietnamese or English for each app (off by default; per-app spec), sound, and launch at login (moved here from the menu).
 - **Footer:** Accessibility state; the version and Check for Updates. When a newer release is known, the footer shows the newer version in ember beside the current one ("0.2.0 available"), and the button becomes Get 0.2.0…, which opens the release page. While Accessibility is missing the footer instead offers a button to open the Settings pane and a Reset Permission button. Reset Permission runs `tccutil reset Accessibility` for the app's bundle id, which clears a grant left by a build from another signer (macOS still lists it as switched on but no longer honours it), then asks macOS to prompt again and opens the Settings pane.
 
 The seal is labelled for VoiceOver with its on or off value, and each preset chip with its keys in words.
@@ -153,7 +155,7 @@ Unit tests for the hotkey matcher (including the exact Ctrl+Shift+Cmd+4 sequence
 - A light theme
 - Downloading or installing updates
 - A switch to turn the daily update check off
-- Per-app settings
+- Per-app settings, other than the mode remembered for each app (added on 2026-11-28; see the per-app spec)
 - Warning when a recorded hotkey collides with another app's shortcut
 
 ## 11. Risks

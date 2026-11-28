@@ -55,7 +55,7 @@ The page's Copy button puts this on the clipboard as plain text: three header li
 
 ```text
 Agares 0.2.0 · macOS 27.2.1 · up 3h 12m
-Settings: Vietnamese on · hotkey Control + Shift + Space · z, w, j, f off · leave other apps' keys on · sound on · launch at login on
+Settings: Vietnamese on · hotkey Control + Shift + Space · z, w, j, f off · leave other apps' keys on · sound on · launch at login on · remember per app off
 Now: accessibility granted · tap enabled · secure input off · input source com.apple.keylayout.ABC · other typing tools none · last app com.google.Chrome
 
 2026-11-27 09:14:02  [app] started 0.2.0

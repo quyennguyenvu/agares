@@ -81,7 +81,8 @@ gh attestation verify Agares-<version>.dmg --repo quyennguyenvu/agares
 ## Using it
 
 - **Switch** between Vietnamese and English with the hotkey, the menu bar item, or the seal in the panel.
-- **Open the panel** from the menu bar item, or by opening Agares again from Launchpad or Spotlight. It holds the hotkey, two typing options, the sound switch, Launch at login and Check for Updates, plus a field to try your typing in.
+- **Let each app keep its own mode** by ticking **Remember Vietnamese or English for each app** in the panel. Coming back to an app then brings back the mode you last used there, without a sound. Agares never guesses: inside one app you still switch with the hotkey, and an app you have never switched in keeps whatever mode is on. It is off by default.
+- **Open the panel** from the menu bar item, or by opening Agares again from Launchpad or Spotlight. It holds the hotkey, two typing options, the per-app and sound switches, Launch at login and Check for Updates, plus a field to try your typing in.
 - **Agares lives in the menu bar.** Its Dock icon is there only while the panel is open.
 - **Closing the panel does not quit Agares**, and neither do ⌘Q or the Dock's Quit. To quit, click the menu bar item and choose **Quit Agares**.
 

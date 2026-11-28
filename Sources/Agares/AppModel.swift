@@ -33,6 +33,11 @@ final class AppModel: ObservableObject {
         }
     }
 
+    /// Brings back the mode each app was last left in whenever that app comes to the front.
+    @Published var remembersPerApp: Bool {
+        didSet { save(remembersPerApp, as: "remembersPerApp") }
+    }
+
     @Published var hotkey: Hotkey {
         didSet {
             keyTap.hotkey = hotkey
@@ -73,6 +78,10 @@ final class AppModel: ObservableObject {
     private var pendingSound: DispatchWorkItem?
     /// Accessibility is granted but macOS will not start the hook. Kept so it is noted once, not every tick.
     private var tapRefused = false
+    /// The mode each app was last left in, by bundle id. Only the user's own toggles fill it.
+    private var appModes = UserDefaults.standard.dictionary(forKey: "appModes") as? [String: Bool] ?? [:]
+    /// Kept by the app-switch notification, so a toggle inside the key hook never asks macOS for it.
+    private var frontApp = NSWorkspace.shared.frontmostApplication?.bundleIdentifier
 
     init() {
         let defaults = UserDefaults.standard
@@ -81,6 +90,7 @@ final class AppModel: ObservableObject {
         soundOn = defaults.bool(forKey: "soundOn")
         allowsZFWJ = defaults.bool(forKey: "allowsZFWJ")
         ignoresOtherApps = defaults.bool(forKey: "ignoresOtherApps")
+        remembersPerApp = defaults.bool(forKey: "remembersPerApp")
         hotkey = Self.storedHotkey(in: defaults)
 
         keyTap.vietnameseOn = vietnameseOn
@@ -92,6 +102,12 @@ final class AppModel: ObservableObject {
             guard self?.diagnostics != nil else { return }
             // Later, not now: the line may have been written inside the key hook, which must not wait.
             DispatchQueue.main.async { self?.refreshDiagnostics() }
+        }
+        NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.didActivateApplicationNotification, object: nil, queue: .main
+        ) { [weak self] notification in
+            let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication
+            self?.appCameToFront(app?.bundleIdentifier)
         }
     }
 
@@ -135,7 +151,7 @@ final class AppModel: ObservableObject {
         let settings = [
             "Vietnamese \(word(vietnameseOn))", "hotkey \(hotkey.name)", "z, w, j, f \(word(allowsZFWJ))",
             "leave other apps' keys \(word(ignoresOtherApps))", "sound \(word(soundOn))",
-            "launch at login \(word(launchAtLogin))",
+            "launch at login \(word(launchAtLogin))", "remember per app \(word(remembersPerApp))",
         ].joined(separator: " · ")
         let report = Diagnostics.report(settings: settings, accessibility: AXIsProcessTrusted(), tap: tapState)
         NSPasteboard.general.clearContents()
@@ -174,8 +190,19 @@ final class AppModel: ObservableObject {
         saveQueue.async { UserDefaults.standard.set(value, forKey: key) }
     }
 
+    /// Not a toggle: it plays no sound and saves nothing for the app.
+    private func appCameToFront(_ app: String?) {
+        frontApp = app
+        guard remembersPerApp, let app, let mode = appModes[app], mode != vietnameseOn else { return }
+        vietnameseOn = mode
+    }
+
     func toggle() {
         vietnameseOn.toggle()
+        if remembersPerApp, let frontApp {
+            appModes[frontApp] = vietnameseOn
+            save(appModes, as: "appModes")
+        }
         // A sound still waiting behind a slow start is dropped, so the wait cannot end in a burst of them.
         pendingSound?.cancel()
         guard soundOn else { return }
@@ -211,6 +238,11 @@ final class AppModel: ObservableObject {
             Diagnostics.note("[login] launch at login failed: \(DiagnosticLog.clean(cause.domain)) \(cause.code)")
             NSAlert(error: error).runModal()
         }
+        refreshLaunchAtLogin()
+    }
+
+    /// Re-reads the setting, which can also be changed in System Settings → Login Items.
+    func refreshLaunchAtLogin() {
         launchAtLogin = SMAppService.mainApp.status == .enabled
     }
 

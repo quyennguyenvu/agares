@@ -161,28 +161,17 @@ final class KeyTap {
             if event.getIntegerValueField(.keyboardEventAutorepeat) == 0 { onHotkey() }
             return nil
         }
-        if !vietnameseOn || !held.isDisjoint(with: [.control, .option, .command]) {
-            engine.reset()
+        switch engine.press(keyCode, letter: Self.letter(of: event), held: held, vietnameseOn: vietnameseOn) {
+        case .pass:
+            return pass
+        case .passMaybeSpotlight:
             typist.forgetSpotlight()
             return pass
+        case .edit(let edit):
+            did = "edit"
+            typist.send(edit, through: proxy)
+            return nil
         }
-
-        let edit: Edit?
-        if keyCode == 51 {
-            edit = engine.backspace()
-        } else if let letter = Self.letter(of: event) {
-            edit = engine.type(letter)
-        } else {
-            engine.reset()
-            // Space is typed constantly and cannot open or close Spotlight. Any other key might
-            // (Return, Escape, a function key), so the cached answer is dropped.
-            if keyCode != 49 { typist.forgetSpotlight() }
-            return pass
-        }
-        guard let edit else { return pass }
-        did = "edit"
-        typist.send(edit, through: proxy)
-        return nil
     }
 
     /// A key pressed on the keyboard has no sending process; one typed by an app carries that app's id.

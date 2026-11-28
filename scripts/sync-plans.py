@@ -34,6 +34,9 @@ EXPECTED = {
             "Sources/Agares/StatusMenu.swift",
             "Sources/Agares/UpdateCheck.swift",
         )),
+        ("2026-11-27-diagnostics.md", (
+            "Sources/Agares/AppModel.swift",
+        )),
     )
     for path in kept
 }

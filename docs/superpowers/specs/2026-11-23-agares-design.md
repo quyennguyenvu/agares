@@ -14,6 +14,7 @@ This spec describes v1 as designed on 2026-11-23. Later decisions changed parts 
 | Network | One request for the latest release, made at most once a day and on demand | same, section 7 |
 | Distribution | Releases for other Macs, signed with the same certificate as local builds | section 7.1 of this document |
 | Spotlight | On macOS 27 the search bar is a panel of the Siri AI app, and the check accepts it too | section 5 of this document, 2026-11-27 |
+| Per-app mode | An option remembers Vietnamese or English for each app and brings it back when the app comes to the front | `2026-11-28-per-app-mode-design.md` |
 
 ## 1. Summary
 
@@ -327,7 +328,7 @@ Downloaded copies still meet the Gatekeeper warning on first launch, as Goetia's
 
 - VNI and legacy encodings
 - Macros (text shortcuts)
-- Remembering Vietnamese or English per app
+- Remembering Vietnamese or English per app (added on 2026-11-28 as an option that is off by default; see the per-app spec)
 - Automatic restore of English words: with Vietnamese on, `test` becomes tét and `expect` becomes ẽpect. Toggle with the hotkey. This is the first candidate for a follow-up.
 - Modern tone style, and any typing option other than the one in 4.8
 - A settings window and a configurable hotkey (both added on 2026-11-25; see the control-panel spec)
