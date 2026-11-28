@@ -129,22 +129,21 @@ private struct PanelView: View {
     }
 
     private var hotkeySection: some View {
-        // A recorded hotkey that is not a preset gets its own chip in front.
-        let shown = Hotkey.presets.contains(model.hotkey) ? Hotkey.presets : [model.hotkey] + Hotkey.presets
-        return VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 12) {
             Text("HOTKEY")
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundColor(Palette.text2)
             HStack(spacing: 8) {
-                ForEach(shown.indices, id: \.self) { index in
+                ForEach(Hotkey.presets.indices, id: \.self) { index in
+                    let preset = Hotkey.presets[index]
                     Button {
-                        model.hotkey = shown[index]
+                        model.hotkey = preset
                     } label: {
-                        Keycaps(keys: shown[index].keycaps, lit: shown[index] == model.hotkey)
+                        Keycaps(keys: preset.keycaps, lit: preset == model.hotkey)
                     }
                     .buttonStyle(.plain)
-                    .help(shown[index].name)
-                    .accessibilityLabel(shown[index].name)
+                    .help(preset.name)
+                    .accessibilityLabel(preset.name)
                 }
             }
             // In words as well: at this size ⌃, the Control key, is easily read as an arrow for Shift.
@@ -153,6 +152,8 @@ private struct PanelView: View {
                 : "Press \(model.hotkey.name) to switch.")
                 .font(.system(size: 12))
                 .foregroundColor(Palette.text2)
+                // Four modifiers and a key do not fit on one line.
+                .fixedSize(horizontal: false, vertical: true)
             HStack(spacing: 10) {
                 Button(model.recording ? "Press the new shortcut…" : "Record…", action: model.record)
                     .disabled(!model.trusted || model.recording)
@@ -160,6 +161,14 @@ private struct PanelView: View {
                     Text("Esc or a click cancels")
                         .font(.system(size: 12))
                         .foregroundColor(Palette.text2)
+                } else if !Hotkey.presets.contains(model.hotkey) {
+                    // A recorded hotkey that is not a preset sits here: in the presets' row it is wider than the panel.
+                    Keycaps(keys: model.hotkey.keycaps, lit: true)
+                        // The row offers the chip half its width first, and a label such as Return would wrap.
+                        .fixedSize()
+                        .help(model.hotkey.name)
+                        .accessibilityElement(children: .ignore)
+                        .accessibilityLabel(model.hotkey.name)
                 }
             }
         }
